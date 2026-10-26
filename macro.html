@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>QuickTick Mini</title>
+<style>
+:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#172033;background:#f5f7fb;font-size:13px}
+*{box-sizing:border-box}body{margin:0;background:#f5f7fb}button,input{font:inherit}button{cursor:pointer}
+.top{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;padding:10px 10px 8px}
+.stat{background:#fff;border:1px solid #e3e8f0;border-radius:9px;padding:7px 8px;min-width:0}
+.label{font-size:9px;text-transform:uppercase;font-weight:800;letter-spacing:.04em;color:#718096}.num{font-size:20px;font-weight:750;line-height:1.25}.open .num{color:#2563eb}.over .num{color:#dc2626}.soon .num{color:#b45309}.rate .num{color:#15803d}
+.sub{font-size:9px;color:#718096;line-height:1.25}
+.addrow{display:flex;gap:6px;padding:0 10px 9px}.addrow input{min-width:0;flex:1;border:1px solid #d7deea;background:#fff;border-radius:8px;padding:8px}.addrow button{border:0;background:#15803d;color:#fff;font-weight:700;border-radius:8px;padding:0 12px}
+.list{padding:0 10px 10px;display:flex;flex-direction:column;gap:6px;max-height:310px;overflow:auto}
+.item{display:flex;gap:8px;align-items:flex-start;background:#fff;border:1px solid #e3e8f0;border-left:3px solid #2563eb;border-radius:8px;padding:8px}.item.overdue{border-left-color:#dc2626}.item.soon{border-left-color:#f59e0b}.item.done{border-left-color:#15803d;opacity:.7}
+.item input{margin:2px 0 0;accent-color:#15803d}.body{min-width:0;flex:1}.title{font-weight:650;overflow-wrap:anywhere}.done .title{text-decoration:line-through;color:#718096}.meta{color:#718096;font-size:10px;margin-top:3px}.del{border:0;background:transparent;color:#94a3b8;font-size:17px;line-height:1;padding:0 2px}.empty{padding:20px 12px;text-align:center;color:#718096}
+.bottom{display:flex;justify-content:space-between;align-items:center;padding:0 10px 10px;color:#718096;font-size:10px}.bottom button{border:0;background:none;color:#15803d;font-weight:700;padding:0}
+</style></head><body>
+<div class="top">
+ <div class="stat open"><div class="label">Open Action Items</div><div class="num" id="open">0</div><div class="sub">Unfinished, all dates</div></div>
+ <div class="stat over"><div class="label">Overdue</div><div class="num" id="overdue">0</div><div class="sub">Deadline passed</div></div>
+ <div class="stat soon"><div class="label">Due Soon</div><div class="num" id="soon">0</div><div class="sub">Today + 3 days</div></div>
+ <div class="stat rate"><div class="label">Completion Rate</div><div class="num" id="rate">0%</div><div class="sub" id="rateSub">0 of 0 completed</div></div>
+</div>
+<form class="addrow" id="addForm"><input id="newTitle" maxlength="120" placeholder="Add an action item…" required><button type="submit">+ Add</button></form>
+<div class="list" id="list"></div>
+<div class="bottom"><span>QuickTick · synced with your dashboard</span><button id="openDashboard" type="button">Full dashboard ↗</button></div>
+<script src="macro.js"></script></body></html>
