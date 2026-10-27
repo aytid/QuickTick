@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>QuickTick — Full Dashboard</title>
+<title>QuickTick</title>
 <style>
 :root{
   --bg:#F5F7FB; --card:#fff; --text:#172033; --muted:#718096; --border:#E3E8F0;
@@ -37,6 +37,7 @@ button{cursor:pointer}
 .btn-primary:hover{background:var(--primary-dark);border-color:var(--primary-dark)}
 .btn-danger{background:var(--overdue);border-color:var(--overdue);color:#fff}
 .btn-danger:hover{background:#B91C1C;border-color:#B91C1C}
+.moved-note{font-size:12px;color:#6B21A8;font-weight:600;padding:0 6px}
 .btn-sm{min-height:34px;padding:5px 11px;font-size:13px}
 .btn-link{border:0;background:none;color:var(--primary);padding:0;font-weight:600;min-height:0;text-decoration:underline}
 
@@ -103,6 +104,7 @@ button{cursor:pointer}
 .chip.s-overdue{background:var(--overdue-bg);color:#991B1B}
 .chip.s-soon{background:var(--soon-bg);color:#92400E}
 .chip.s-open{background:var(--open-bg);color:#1E40AF}
+.chip.s-pending{background:#F3E8FF;color:#6B21A8}
 .chip.s-done{background:var(--done-bg);color:#166534;text-decoration:line-through;text-decoration-color:rgba(22,101,52,.5)}
 .more{font-size:11px;color:var(--muted);font-weight:700;padding-left:3px}
 .legend{display:flex;flex-wrap:wrap;gap:14px;padding:0 16px 14px;font-size:12.5px;color:var(--muted)}
@@ -111,10 +113,18 @@ button{cursor:pointer}
 
 /* panel */
 .panel-list{padding:12px;display:flex;flex-direction:column;gap:10px;max-height:calc(100vh - 240px);min-height:200px;overflow:auto}
-.task{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border:1px solid var(--border);border-left:4px solid var(--open);border-radius:10px;background:#fff}
+.task{display:flex;gap:10px;align-items:flex-start;padding:12px;border:1px solid var(--border);border-left:4px solid var(--open);border-radius:10px;background:#fff;min-width:0}
+.task-main{flex:1;min-width:0;display:flex;flex-direction:column;gap:7px}
+.task-title{font-weight:650;overflow-wrap:anywhere;line-height:1.4}
+.task .meta{display:flex;align-items:center;gap:6px;flex-wrap:wrap;min-width:0}
+.task-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:3px}
+.task-actions .btn{white-space:nowrap}
+.task-actions .icon-btn{flex:none}
+.task .chk{margin-top:2px}
 .task.s-overdue{border-left-color:var(--overdue);background:#FFF8F8}
 .task.s-soon{border-left-color:var(--soon-line);background:#FFFCF2}
 .task.s-open{border-left-color:var(--open)}
+.task.s-pending{border-left-color:#9333EA;background:#FCF8FF}
 .task.s-done{border-left-color:var(--done)}
 .task .chk{width:22px;height:22px;margin:1px 0 0;accent-color:var(--done);flex:none;cursor:pointer}
 .task-main{flex:1;min-width:0}
@@ -128,11 +138,12 @@ button{cursor:pointer}
 .badge.s-overdue{background:var(--overdue-bg);color:#991B1B}
 .badge.s-soon{background:var(--soon-bg);color:#92400E}
 .badge.s-open{background:var(--open-bg);color:#1E40AF}
+.badge.s-pending{background:#F3E8FF;color:#6B21A8}
 .badge.s-done{background:var(--done-bg);color:#166534}
 .badge.p{background:#fff;border-color:var(--border);color:#475569}
 .badge.p-Urgent{color:#BE123C;border-color:#FDA4AF;background:#FFF1F2}
 .badge.p-High{color:#C2410C;border-color:#FDBA74;background:#FFF7ED}
-.task-actions{display:flex;gap:4px;flex:none}
+.task-actions{display:flex;gap:6px;flex-wrap:wrap;align-items:center;margin-top:3px}
 .empty{text-align:center;padding:30px 16px;color:var(--muted)}
 .empty .ico{width:52px;height:52px;border-radius:50%;background:var(--primary-soft);color:var(--primary);display:grid;place-items:center;margin:0 auto 10px}
 .empty h3{margin:0 0 4px;color:var(--text);font-size:16px}
@@ -210,7 +221,6 @@ dialog::backdrop{background:rgba(15,23,42,.5)}
     </div>
     <div class="actions" role="toolbar" aria-label="Application actions">
       <button class="btn" id="btnToday" type="button">Today</button>
-      <button class="btn" id="btnFullDashboard" type="button">Full Dashboard ↗</button>
       <button class="btn" id="btnExport" type="button">Export CSV</button>
       <button class="btn" id="btnBackup" type="button">Backup Total Data</button>
       <button class="btn" id="btnRestore" type="button">Restore Backup</button>
@@ -237,7 +247,7 @@ dialog::backdrop{background:rgba(15,23,42,.5)}
       <div class="field"><label for="fFrom">From date</label><input type="date" id="fFrom"></div>
       <div class="field"><label for="fTo">To date</label><input type="date" id="fTo"></div>
       <div class="field"><label for="fStatus">Status</label>
-        <select id="fStatus"><option value="all">All statuses</option><option value="open">Open</option><option value="overdue">Overdue</option><option value="soon">Due soon</option><option value="done">Completed</option></select></div>
+        <select id="fStatus"><option value="all">All statuses</option><option value="open">Open</option><option value="overdue">Overdue</option><option value="soon">Due soon</option><option value="pending">Pending</option><option value="done">Completed</option></select></div>
       <div class="field"><label for="fPriority">Priority</label>
         <select id="fPriority"><option value="all">All priorities</option><option>Urgent</option><option>High</option><option>Medium</option><option>Low</option></select></div>
       <div class="field"><label for="fSort">Sort by</label>
@@ -256,7 +266,7 @@ dialog::backdrop{background:rgba(15,23,42,.5)}
     <div class="stat s-open"><div class="lbl">Open Action Items</div><div class="val" id="stOpen">0</div><div class="sub">Unfinished, all dates</div></div>
     <div class="stat s-overdue"><div class="lbl">Overdue</div><div class="val" id="stOverdue">0</div><div class="sub">Deadline has passed</div></div>
     <div class="stat s-soon"><div class="lbl">Due Soon</div><div class="val" id="stSoon">0</div><div class="sub">Today to next 3 days</div></div>
-    <div class="stat s-done"><div class="lbl">Completion Rate</div><div class="val" id="stRate">0%</div>
+    <div class="stat s-done"><div class="lbl">Day Completion Rate</div><div class="val" id="stRate">0%</div>
       <div class="bar" role="progressbar" aria-label="Completion rate" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" id="stBar"><i style="width:0"></i></div>
       <div class="sub" id="stRateSub">No tasks yet</div></div>
   </section>

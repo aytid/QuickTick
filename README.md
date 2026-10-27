@@ -1,32 +1,27 @@
-# QuickTick Browser Extension (Chrome / Edge)
+# QuickTick Browser Extension (Chrome / Edge) — v1.3.9
 
 ## Install locally
-1. Extract `QuickTick_extension.zip` into a folder.
-2. Open `chrome://extensions` in Chrome or `edge://extensions` in Edge.
-3. Enable **Developer mode**.
-4. Click **Load unpacked**.
-5. Select the extracted `QuickTick_extension` folder.
-6. Pin the QuickTick icon to your browser toolbar.
+1. Extract the zip into a folder.
+2. Open `chrome://extensions` (or `edge://extensions`) and enable **Developer mode**.
+3. Click **Load unpacked** and select the extracted folder.
+4. Pin the QuickTick icon to your toolbar.
 
 ## Use
-- Click the QuickTick toolbar icon to open the compact planner.
-- Use **Full Dashboard** to open the full calendar in a browser tab.
-- Tasks, calendar navigation, filters, deadline colors, CSV export, and JSON backup/restore are included.
+- Click the toolbar icon on any normal web page to open the draggable floating checklist (with previous/next-day navigation).
+- On a new-tab page the icon opens a small QuickTick window instead.
+- On browser pages (chrome://, Web Store, etc.) QuickTick cannot run; the icon shows a "!" badge. Use **Full dashboard** from the panel or the extension's options page.
+- The full dashboard has the calendar, filters, deadline colours, CSV export and JSON backup/restore.
+- Tasks can be marked **pending** (and un-marked), and **moved to the next day** (a copy is created; the original is marked pending and shows where it went).
 
 ## Data storage
-This build retains the existing QuickTick localStorage key (`QuickTick_action_items_v1`) so it can share task data with the supplied standalone HTML when opened from the same origin. Chrome extension pages have their own origin/storage partition, however, so tasks created in the extension are separate from tasks in a normal `file://` HTML page.
-The extension requests the `storage` permission for future Chrome storage integration. Do not uninstall the extension or clear its data without first downloading a JSON backup.
+All three views (floating panel, new-tab window, dashboard) share `chrome.storage.local` under the key `QuickTick_action_items_v1`. The dashboard also keeps a fallback copy in its own localStorage. Data from older builds (`daymark_action_items_v1`) is migrated automatically and the old copy is left untouched as a backup.
+Do not uninstall the extension or clear its data without first downloading a JSON backup from the dashboard.
 
-## Browser compatibility
-Designed for Chromium-based browsers such as Google Chrome and Microsoft Edge (Manifest V3).
+## Permissions
+`activeTab` + `scripting` (inject the panel only when you click the icon), `storage` (tasks), `tabs` (detect new-tab pages). No access to all websites is requested.
 
+## CSV export
+Cells that start with `=`, `+`, `-` or `@` are prefixed with an apostrophe so spreadsheets don't run them as formulas.
 
-## Troubleshooting clicks
-This package uses external JavaScript files (`popup.js` and `dashboard.js`) because Chrome Manifest V3 blocks inline JavaScript in extension pages. After replacing the old extension:
-1. Extract the new ZIP into a new folder.
-2. Open `chrome://extensions`.
-3. Click **Reload** on QuickTick, or remove the old unpacked extension and load the new folder.
-4. Close any already-open QuickTick popup and click the toolbar icon again.
-
-
-Made by [Rohan Aditya](https://www.linkedin.com/in/rohan-aditya-thirumala-6b8228264?utm_source=share_via&utm_content=profile&utm_medium=member_android).
+## Troubleshooting
+After replacing an older build, remove the old unpacked extension (or click **Reload** on `chrome://extensions`), then close and reopen any open QuickTick panels. Pages that were open before the update need a refresh before the panel works there again.

@@ -2,13 +2,14 @@
   'use strict';
 
   /* ---------- Constants & helpers ---------- */
-  var KEY = 'daymark_action_items_v1';
+  var KEY = 'QuickTick_action_items_v1';
+  var LEGACY_KEY = 'daymark_action_items_v1'; // pre-1.3.9 storage key, read once for migration
   var APP = 'QuickTick';
   var FORMAT_VERSION = 1;
   var PRIORITIES = ['Urgent', 'High', 'Medium', 'Low'];
   var PRANK = { Urgent: 0, High: 1, Medium: 2, Low: 3 };
-  var STATUS_LABEL = { open: 'Open', overdue: 'Overdue', soon: 'Due soon', done: 'Completed' };
-  var STATUS_RANK = { overdue: 0, soon: 1, open: 2, done: 3 };
+  var STATUS_LABEL = { open: 'Open', overdue: 'Overdue', soon: 'Due soon', done: 'Completed', pending: 'Pending' };
+  var STATUS_RANK = { overdue: 0, soon: 1, open: 2, pending: 3, done: 4 };
   var MAX_TITLE = 120, MAX_NOTES = 2000;
 
   function $(s, r) { return (r || document).querySelector(s); }
@@ -79,7 +80,7 @@
     if (done) completed = (typeof x.completedAt === 'string' && !isNaN(Date.parse(x.completedAt))) ? x.completedAt : created;
     return { task: {
       id: id, title: x.title.trim().slice(0, MAX_TITLE), plannedDate: x.plannedDate, deadline: x.deadline,
-      priority: pr, notes: (x.notes || '').slice(0, MAX_NOTES), done: done, createdAt: created, completedAt: completed
+      priority: pr, notes: (x.notes || '').slice(0, MAX_NOTES), done: done, pending: !!x.pending && !done, movedTo: (typeof x.movedTo === 'string' ? x.movedTo : ''), createdAt: created, completedAt: completed
     } };
   }
 
@@ -90,7 +91,7 @@
       return [];
     }
     var raw;
-    try { raw = storage.getItem(KEY); } catch (e) { raw = null; }
+    try { raw = storage.getItem(KEY); if (raw === null) raw = storage.getItem(LEGACY_KEY); } catch (e) { raw = null; }
     if (raw === null) { setStorageStatus(true, 'Storage ready'); return []; }
     try {
       var data = JSON.parse(raw);
@@ -136,6 +137,7 @@
   function statusKey(t, today) {
     today = today || todayISO();
     if (t.done) return 'done';
+    if (t.pending) return 'pending';
     if (t.deadline < today) return 'overdue';
     if (t.deadline <= addDays(today, 3)) return 'soon';
     return 'open';
@@ -183,14 +185,16 @@
       var k = statusKey(t, today);
       if (k === 'done') done++; else { open++; if (k === 'overdue') over++; else if (k === 'soon') soon++; }
     });
-    var total = state.tasks.length, rate = total ? Math.round(done / total * 100) : 0;
+    var selectedTasks = state.tasks.filter(function (t) { return t.plannedDate === state.selected; });
+    var selectedDone = selectedTasks.filter(function (t) { return !!t.done; }).length;
+    var total = selectedTasks.length, rate = total ? Math.round(selectedDone / total * 100) : 0;
     $('#stOpen').textContent = open;
     $('#stOverdue').textContent = over;
     $('#stSoon').textContent = soon;
     $('#stRate').textContent = rate + '%';
     $('#stBar').setAttribute('aria-valuenow', rate);
     $('#stBar').firstElementChild.style.width = rate + '%';
-    $('#stRateSub').textContent = total ? (done + ' of ' + total + ' completed') : 'No tasks yet';
+    $('#stRateSub').textContent = total ? (selectedDone + ' of ' + total + ' completed on ' + fmtShort(state.selected)) : 'No tasks planned for selected date';
   }
 
   function renderCalendar() {
@@ -243,21 +247,25 @@
     return ' (' + (-d) + ' days ago)';
   }
 
+  function hasMovedCopy(t) { return !!(t.movedTo && findTask(t.movedTo)); }
   function taskCard(t, today, showPlanned) {
     var k = statusKey(t, today);
     return '<article class="task s-' + k + '" data-id="' + esc(t.id) + '">' +
       '<input type="checkbox" class="chk" data-act="toggle" ' + (t.done ? 'checked ' : '') + 'aria-label="Mark “' + esc(t.title) + '” as completed">' +
-      '<div class="task-main"><div class="task-title">' + esc(t.title) + '</div>' +
-      (t.notes ? '<div class="task-notes">' + linkify(t.notes) + '</div>' : '') +
+      '<div class="task-main">' +
+      '<div class="task-title">' + esc(t.title) + '</div>' +
       '<div class="meta"><span class="badge s-' + k + '">' + STATUS_LABEL[k] + '</span>' +
       '<span class="badge p p-' + t.priority + '">' + t.priority + '</span>' +
       '<span>Deadline: ' + fmtShort(t.deadline) + esc(deadlineNote(t, today)) + '</span>' +
       (showPlanned ? '<span>· Planned: <button type="button" class="btn-link" data-act="goto" data-date="' + t.plannedDate + '">' + fmtShort(t.plannedDate) + '</button></span>' : '') +
-      '</div></div>' +
+      '</div>' +
+      (t.notes ? '<div class="task-notes">' + linkify(t.notes) + '</div>' : '') +
       '<div class="task-actions">' +
+      (!t.done ? (t.pending ? '<button type="button" class="btn btn-sm" data-act="unpending" title="Remove the pending mark">Unmark pending</button>' : '<button type="button" class="btn btn-sm" data-act="pending" title="Mark as pending">Mark pending</button>') : '') +
+      (hasMovedCopy(t) ? '<span class="moved-note">Moved to ' + esc(fmtShort(findTask(t.movedTo).plannedDate)) + '</span>' : '<button type="button" class="btn btn-sm" data-act="nextday" title="Copy this task to the next day">Move to next day</button>') +
       '<button type="button" class="icon-btn sm" data-act="edit" aria-label="Edit “' + esc(t.title) + '”" title="Edit">' + ICON_EDIT + '</button>' +
       '<button type="button" class="icon-btn sm danger" data-act="delete" aria-label="Delete “' + esc(t.title) + '”" title="Delete">' + ICON_DEL + '</button>' +
-      '</div></article>';
+      '</div></div></article>';
   }
 
   function emptyBlock(icon, title, text, btn) {
@@ -314,18 +322,20 @@
     var box = $('#toasts'), el = document.createElement('div');
     el.className = 'toast' + (type ? ' ' + type : '');
     el.textContent = msg;
+    while (box.children.length >= 2) box.removeChild(box.firstChild);
     box.appendChild(el);
     setTimeout(function () { if (el.parentNode) el.parentNode.removeChild(el); }, ms || 3000);
   }
 
   /* ---------- Confirm dialog ---------- */
-  function confirmBox(title, msg, okText, danger) {
+  function confirmBox(title, msg, okText, danger, noCancel) {
     return new Promise(function (resolve) {
       var d = $('#confirmDlg');
       $('#confirmTitle').textContent = title;
       $('#confirmMsg').textContent = msg;
       var ok = $('#confirmOk'); ok.textContent = okText || 'OK';
       ok.className = 'btn ' + (danger ? 'btn-danger' : 'btn-primary');
+      $('#confirmCancel').style.display = noCancel ? 'none' : '';
       d.returnValue = '';
       d.addEventListener('close', function () { resolve(d.returnValue === 'ok'); }, { once: true });
       d.showModal();
@@ -389,11 +399,13 @@
           isEdit = true; wasDone = t.done;
           t.title = title; t.plannedDate = planned; t.deadline = deadline; t.priority = priority; t.notes = notes;
           t.done = done;
+          t.pending = done ? false : !!t.pending;
+          if (done) t.movedTo = '';
           t.completedAt = done ? (wasDone && t.completedAt ? t.completedAt : now) : '';
         }
       }
       if (!isEdit) {
-        state.tasks.push({ id: newId(), title: title, plannedDate: planned, deadline: deadline, priority: priority, notes: notes, done: done, createdAt: now, completedAt: done ? now : '' });
+        state.tasks.push({ id: newId(), title: title, plannedDate: planned, deadline: deadline, priority: priority, notes: notes, done: done, pending: false, movedTo: '', createdAt: now, completedAt: done ? now : '' });
       }
       var saved = saveTasks();
       selectDate(planned, true);
@@ -414,10 +426,41 @@
   function toggleTask(id, checked) {
     var t = findTask(id); if (!t) return;
     t.done = checked;
+    t.pending = false; t.movedTo = '';
     t.completedAt = checked ? new Date().toISOString() : '';
     var saved = saveTasks();
     renderAll();
     if (saved) toast(checked ? 'Task completed' : 'Task reopened');
+  }
+  function markPending(id) {
+    var t = findTask(id); if (!t || t.done) return;
+    t.pending = true;
+    var saved = saveTasks();
+    renderAll();
+    if (saved) toast('Task marked as pending');
+  }
+  function unmarkPending(id) {
+    var t = findTask(id); if (!t) return;
+    t.pending = false; t.movedTo = '';
+    var saved = saveTasks();
+    renderAll();
+    if (saved) toast('Pending mark removed');
+  }
+  function moveTaskToNextDay(id) {
+    var t = findTask(id); if (!t || hasMovedCopy(t)) return;
+    var next = addDays(t.plannedDate || state.selected, 1);
+    var copy = {
+      id: newId(), title: t.title, plannedDate: next,
+      deadline: t.deadline === t.plannedDate ? next : (t.deadline || next),
+      priority: t.priority || 'Medium', notes: t.notes || '',
+      done: false, pending: false, movedTo: '', createdAt: new Date().toISOString(), completedAt: ''
+    };
+    state.tasks.push(copy);
+    t.pending = true;
+    t.movedTo = copy.id;
+    var saved = saveTasks();
+    selectDate(next, true);
+    if (saved) toast('Task copied to ' + fmtShort(next));
   }
   function deleteTask(id) {
     var t = findTask(id); if (!t) return;
@@ -433,6 +476,7 @@
   /* ---------- CSV ---------- */
   function csvCell(v) {
     var s = v === null || v === undefined ? '' : String(v);
+    if (/^[=+\-@\t\r]/.test(s)) s = "'" + s; // neutralise spreadsheet formulas
     return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
   }
   function buildCsv(list) {
@@ -490,7 +534,7 @@
       if (seen[r.task.id]) { errors.push('Task #' + (i + 1) + ': duplicate id'); return; }
       seen[r.task.id] = 1; out.push(r.task);
     });
-    if (errors.length) return { error: 'No changes were made. ' + plural(errors.length, 'record') + ' in the file are invalid.\n' + errors.slice(0, 4).join('\n') + (errors.length > 4 ? '\n…' : '') };
+    if (errors.length) return { error: 'No changes were made. ' + plural(errors.length, 'record') + ' in the file ' + (errors.length === 1 ? 'is' : 'are') + ' invalid.\n' + errors.slice(0, 4).join('\n') + (errors.length > 4 ? '\n…' : '') };
     return { tasks: out };
   }
   function handleRestoreFile(file) {
@@ -500,7 +544,7 @@
     reader.onerror = function () { toast('The file could not be read.', 'error'); };
     reader.onload = function () {
       var res = parseBackup(String(reader.result));
-      if (res.error) { confirmBox('Backup could not be restored', res.error, 'OK', false); return; }
+      if (res.error) { confirmBox('Backup could not be restored', res.error, 'OK', false, true); return; }
       showRestoreDialog(res.tasks, file.name);
     };
     reader.readAsText(file);
@@ -590,6 +634,9 @@
     var btn = e.target.closest('[data-act]'); if (!btn) return;
     var act = btn.getAttribute('data-act'), card = btn.closest('.task'), id = card ? card.getAttribute('data-id') : null;
     if (act === 'edit') { var t = findTask(id); if (t) openTaskModal(t); }
+    else if (act === 'pending') markPending(id);
+    else if (act === 'unpending') unmarkPending(id);
+    else if (act === 'nextday') moveTaskToNextDay(id);
     else if (act === 'delete') deleteTask(id);
     else if (act === 'goto') { selectDate(btn.getAttribute('data-date'), true); }
     else if (act === 'add') openTaskModal(null, state.selected);
@@ -636,38 +683,36 @@
   renderAll();
 
   /* ---------- QuickTick shared storage ---------- */
+  // chrome.storage.local is the source of truth shared with the floating panel and
+  // the new-tab window. localStorage is only a fallback copy for this page.
   if (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local) {
+    function sameTasks(a, b) { try { return JSON.stringify(a) === JSON.stringify(b); } catch (e) { return false; } }
     function applySharedTasks(raw) {
       if (!Array.isArray(raw)) return false;
       var cleaned = [], seen = {};
       raw.forEach(function (x) {
         var r = validateTask(x), task = r.task;
-        if (!task && x && x.id != null && x.title != null) {
-          task = {
-            id: String(x.id), title: String(x.title),
-            plannedDate: x.plannedDate || x.deadline || todayISO(),
-            deadline: x.deadline || x.plannedDate || todayISO(),
-            priority: x.priority || 'Medium', notes: x.notes || '',
-            done: !!x.done, createdAt: x.createdAt || new Date().toISOString(),
-            completedAt: x.completedAt || ''
-          };
-        }
-        if (task && !seen[String(task.id)]) { seen[String(task.id)] = true; cleaned.push(task); }
+        if (task && !seen[task.id]) { seen[task.id] = true; cleaned.push(task); }
       });
+      if (sameTasks(cleaned, state.tasks)) return true; // our own save echoing back
       state.tasks = cleaned;
       try { if (storage) storage.setItem(KEY, JSON.stringify(cleaned)); } catch (e) {}
       renderAll();
-      setStorageStatus(true, 'Loaded ' + plural(cleaned.length, 'task') + ' from QuickTick');
+      setStorageStatus(true, 'Synced ' + plural(cleaned.length, 'task') + ' with QuickTick');
       return true;
     }
-    chrome.storage.local.get([KEY], function (result) {
+    chrome.storage.local.get([KEY, LEGACY_KEY], function (result) {
       if (chrome.runtime && chrome.runtime.lastError) {
         setStorageStatus(false, 'Could not read QuickTick shared storage'); return;
       }
       var shared = result && result[KEY];
-      if (Array.isArray(shared) && shared.length) {
+      if (!Array.isArray(shared) && result && Array.isArray(result[LEGACY_KEY])) shared = result[LEGACY_KEY]; // migrate pre-1.3.9 data
+      if (Array.isArray(shared)) {
+        // The shared copy exists (even if empty) and wins over this page's local copy,
+        // so tasks deleted elsewhere are not resurrected.
         applySharedTasks(shared);
-      } else if ((!Array.isArray(shared) || shared.length === 0) && state.tasks.length) {
+        var m = {}; m[KEY] = state.tasks; chrome.storage.local.set(m);
+      } else if (state.tasks.length) {
         var migration = {}; migration[KEY] = state.tasks; chrome.storage.local.set(migration);
       }
     });
@@ -677,7 +722,5 @@
       }
     });
   }
-
-
 
 })();
