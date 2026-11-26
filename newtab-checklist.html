@@ -5,36 +5,100 @@
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>QuickTick</title>
 <style>
-:root{font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#172033;background:#f5f7fb;font-size:13px}
-*{box-sizing:border-box}body{margin:0;background:#f5f7fb}button,input{font:inherit}button{cursor:pointer}
-.panel{height:100vh;display:flex;flex-direction:column;background:#f5f7fb}
-.head{height:42px;flex:none;background:#fff;border-bottom:1px solid #e3e8f0;display:flex;align-items:center;justify-content:space-between;padding:0 12px}
-.brand{display:flex;align-items:center;gap:9px;font-weight:800;font-size:15px;color:#172554}
-.logo{width:16px;height:16px;border-radius:4px;background:#16a34a;color:white;text-align:center;font-size:12px;line-height:16px}
-#close{border:0;background:transparent;color:#64748b;font-size:21px}
-.add{display:flex;gap:6px;padding:10px 10px 6px}.add input{min-width:0;flex:1;border:1px solid #d7deea;background:#fff;border-radius:8px;padding:9px}.add button{border:0;background:#15803d;color:white;font-weight:700;border-radius:8px;padding:0 12px}
-.nav{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:2px 10px 8px}
-.nav button{border:1px solid #dbe2ee;background:#fff;color:#334155;border-radius:7px;padding:6px 9px;font-size:11px;font-weight:700;white-space:nowrap}
-.nav button:hover{background:#f0fdf4;border-color:#86efac}
-.nav .date{font-size:11px;font-weight:750;color:#334155;text-align:center}
-.nav .today[hidden]{display:none}
-.nav .today{display:block;margin:3px auto 0;border:0;background:none;color:#15803d;padding:0;font-size:10px}
-.list{padding:0 10px 10px;display:flex;flex-direction:column;gap:6px;flex:1;min-height:0;overflow:auto}
-.item{display:flex;gap:8px;align-items:flex-start;background:#fff;border:1px solid #e3e8f0;border-left:3px solid #16a34a;border-radius:9px;padding:9px}
-.item.overdue{border-left-color:#dc2626}.item.soon{border-left-color:#f59e0b}.item.pending{border-left-color:#9333ea;background:#fcf8ff}.item.done{opacity:.72}
-.item input{margin-top:2px;accent-color:#16a34a}.body{flex:1;min-width:0}.title{overflow-wrap:anywhere;font-weight:650}.done .title{text-decoration:line-through;color:#718096}
-.meta{font-size:11px;color:#64748b;margin-top:3px}.del{border:0;background:none;color:#94a3b8;font-size:18px;line-height:1;padding:0 2px}.del:hover{color:#dc2626}
-.actions{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px;align-items:center}
-.mini{border:1px solid #dbe2ee;background:#fff;color:#475569;border-radius:5px;padding:3px 5px;font-size:10px;white-space:nowrap}
-.moved{font-size:10px;color:#6b21a8;font-weight:650}
-.empty{padding:20px 8px;text-align:center;color:#718096}
-.foot{border-top:1px solid #e3e8f0;background:#fff;padding:9px 11px;display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#64748b}.foot a{color:#15803d;text-decoration:none;font-weight:700}
+:root{
+  color-scheme:light;
+  --bg:#F7F6F2;--card:#FFFFFF;--input:#FFFFFF;--text:#141413;--muted:#686762;--faint:#8E8C86;
+  --border:#141413;--hover:#F1EFE8;--subtle:#F1EFE8;
+  --accent:#00D26A;--accent-hover:#00B85C;--overdue:#FF5E3A;--soon:#FFB800;--soon-bg:#FFF9E6;--open:#2563EB;--pending:#7E22CE;--pending-bg:#F6EEFF;--done-bg:#E8FBF1;
+  --ink:#141413;--on-ink:#FFFFFF;--shadow-xs:2px 2px 0px #141413;--shadow-sm:3px 3px 0px #141413;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Monaco,Consolas,monospace;
+}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#131312;--card:#1C1C1A;--input:#161614;--text:#F4F3EE;--muted:#A6A49D;--faint:#73716A;
+  --border:#3E3E3A;--hover:#262623;--subtle:#252522;
+  --accent:#00E072;--accent-hover:#00C464;--overdue:#FF6B4A;--soon:#FFB800;--soon-bg:rgba(255,184,0,0.14);--open:#60A5FA;--pending:#C084FC;--pending-bg:rgba(192,132,252,.14);--done-bg:rgba(0,224,114,0.14);
+  --ink:#F4F3EE;--on-ink:#141413;--shadow-xs:2px 2px 0px #000000;--shadow-sm:3px 3px 0px #000000;
+}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{
+  margin:0;background-color:var(--bg);
+  background-image:radial-gradient(rgba(20,20,19,0.13) 1.1px,transparent 1.1px);
+  background-size:16px 16px;
+  color:var(--text);font:12.5px/1.4 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+}
+:root[data-theme="dark"] body{background-image:radial-gradient(rgba(255,255,255,0.08) 1.1px,transparent 1.1px)}
+button,input{font:inherit;color:inherit}button{cursor:pointer}
+.panel{height:100vh;display:flex;flex-direction:column}
+.head{height:48px;flex:none;background:var(--card);border-bottom:2px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 13px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:900;font-size:15.5px;letter-spacing:-0.02em}
+.logo{width:24px;height:24px;border-radius:7px;background:var(--accent);border:2px solid var(--border);box-shadow:var(--shadow-xs);color:#141413;text-align:center;font-weight:900;font-size:14px;line-height:20px}
+.live-pill{font-family:var(--mono);font-size:9.5px;font-weight:800;padding:2px 7px;border-radius:6px;background:var(--subtle);border:1.5px solid var(--border)}
+#close{width:28px;height:28px;border-radius:8px;border:2px solid var(--border);background:var(--card);box-shadow:var(--shadow-xs);color:var(--text);font-size:17px;font-weight:800;display:grid;place-items:center}
+#close:hover{background:var(--overdue);color:#fff}
+
+.stats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));margin:10px 10px 9px;background:var(--card);border:2px solid var(--border);border-radius:12px;box-shadow:var(--shadow-sm);overflow:hidden;flex:none}
+.stat{padding:7px 8px;border-right:1.5px solid var(--border)}
+.stat:last-child{border-right:0}
+.stat-top{display:flex;align-items:center;justify-content:space-between;gap:3px}
+.stat .lbl{font-family:var(--mono);font-size:9px;font-weight:800;text-transform:uppercase;letter-spacing:.03em;color:var(--muted)}
+.led{width:7px;height:7px;border-radius:50%;border:1.5px solid var(--border)}
+.led.open{background:#3B82F6}.led.over{background:var(--overdue)}.led.soon{background:var(--soon)}.led.done{background:var(--accent)}
+.stat .num{font-size:19px;font-weight:900;line-height:1.15;margin-top:2px}
+.stat .sub{font-size:9px;font-weight:600;color:var(--muted)}
+.stat.over .num{color:var(--overdue)}
+.stat.soon{background:var(--soon-bg)}
+.stat.done{background:var(--done-bg)}
+
+.add{display:flex;gap:6px;padding:0 10px;flex:none}
+.add input{min-width:0;flex:1;border:2px solid var(--border);background:var(--input);border-radius:9px;padding:7px 10px;font-weight:500;box-shadow:var(--shadow-xs)}
+.add input:focus{outline:none;box-shadow:3px 3px 0px var(--accent)}
+.add button{border:2px solid var(--border);background:var(--accent);color:#141413;font-weight:800;border-radius:9px;padding:0 12px;box-shadow:var(--shadow-xs)}
+.preview{display:flex;flex-wrap:wrap;align-items:center;gap:4px;min-height:22px;padding:5px 12px 6px;font-family:var(--mono);font-size:10px;color:var(--muted);flex:none}
+.preview .tag{background:var(--card);border:1.5px solid var(--border);border-radius:5px;padding:1px 6px;color:var(--text);font-weight:700;font-size:10px}
+.preview .tag.hi{background:#FFF0EC;color:#C83214;border-color:#FF5E3A}
+.preview .tag.dt{background:#EEF4FF;color:#1D4ED8;border-color:#2563EB}
+
+.nav{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:0 10px 8px;flex:none}
+.nav > button{border:1.5px solid var(--border);background:var(--card);border-radius:8px;padding:4px 9px;font-size:11px;font-weight:700;white-space:nowrap;box-shadow:var(--shadow-xs)}
+.nav > button:hover{background:var(--hover)}
+.nav .date{font-size:11.5px;font-weight:800;text-align:center}
+.nav .today{display:block;margin:2px auto 0;border:0;box-shadow:none;background:none;color:#009E4F;padding:0;font-size:10px;font-weight:800;text-decoration:underline}
+.toast{display:flex;align-items:center;gap:8px;margin:0 10px 8px;padding:7px 10px;background:var(--ink);color:var(--on-ink);border:1.5px solid var(--border);border-radius:8px;font-size:11px;font-weight:600;flex:none}
+.toast span{flex:1}.toast button{border:0;background:none;color:var(--accent);font-weight:800;text-decoration:underline;padding:0}
+.list{padding:0 10px 10px;display:flex;flex-direction:column;gap:7px;flex:1;min-height:0;overflow:auto}
+.item{display:flex;gap:8px;align-items:flex-start;background:var(--card);border:2px solid var(--border);border-left:5px solid var(--open);border-radius:11px;padding:7px 9px;box-shadow:var(--shadow-xs)}
+.item.overdue{border-left-color:var(--overdue)}.item.soon{border-left-color:var(--soon)}.item.pending{border-left-color:var(--pending);background:var(--pending-bg)}.item.done{border-left-color:var(--accent);opacity:.68;box-shadow:none}
+.item input{margin-top:2px;width:16px;height:16px;accent-color:var(--accent)}.body{flex:1;min-width:0}.title{overflow-wrap:anywhere;font-weight:800;line-height:1.3}.done .title{text-decoration:line-through;color:var(--muted)}
+.meta{font-size:10.5px;color:var(--muted);margin-top:3px;display:flex;flex-wrap:wrap;align-items:center;gap:4px}
+.pill{font-family:var(--mono);font-size:9.5px;font-weight:800;padding:1px 5px;border-radius:5px;border:1px solid var(--border);background:var(--subtle);color:var(--text)}
+.pill.s-soon{background:#FFF4D6;color:#8A5A00;border-color:#D99B00}
+.pill.s-overdue{background:#FFF0EC;color:#C83214;border-color:#FF5E3A}
+.pill.p-Urgent,.pill.p-High{background:#FFF0EC;color:#C83214;border-color:#FF5E3A}
+.del{border:0;background:none;color:var(--faint);font-size:17px;font-weight:700;line-height:1;padding:0 2px}.del:hover{color:var(--overdue)}
+.actions{display:flex;flex-wrap:wrap;gap:5px;margin-top:5px;align-items:center}
+.mini{border:1.5px solid var(--border);background:var(--card);border-radius:7px;padding:2px 7px;font-size:10px;font-weight:700;white-space:nowrap}
+.mini:hover{background:var(--hover)}.mini.danger{color:var(--overdue);border-color:var(--overdue)}
+.ask{font-size:10.5px;font-weight:700;width:100%}
+.moved{font-size:10px;color:var(--pending);font-weight:700}
+.empty{padding:20px 8px;text-align:center;color:var(--muted);font-weight:600;background:var(--card);border:1.5px dashed var(--border);border-radius:10px}
+.foot{border-top:2px solid var(--border);background:var(--card);padding:8px 11px;display:flex;justify-content:space-between;align-items:center;font-size:10.5px;font-weight:600;color:var(--muted);flex:none}
+.foot a{border:1.5px solid var(--border);background:var(--ink);color:var(--on-ink);padding:4px 9px;border-radius:7px;text-decoration:none;font-weight:800;box-shadow:var(--shadow-xs)}
+.foot a:hover{background:var(--accent);color:#141413}
 </style>
 </head>
 <body><main class="panel">
-<header class="head"><div class="brand"><span class="logo">✓</span>QuickTick</div><button id="close" title="Close" aria-label="Close">×</button></header>
-<form class="add" id="add"><input id="title" maxlength="120" placeholder="Add an action item..." aria-label="New action item" autocomplete="off"><button type="submit">+ Add</button></form>
-<div class="nav"><button type="button" id="prev" aria-label="Previous day">‹ Previous</button><div><div class="date" id="date" aria-live="polite"></div><button type="button" class="today" id="goToday" hidden>Back to today</button></div><button type="button" id="next" aria-label="Next day">Next ›</button></div>
+<header class="head"><div class="brand"><span class="logo">✓</span>QuickTick <span class="live-pill">TACTILE</span></div><button id="close" title="Close" aria-label="Close">×</button></header>
+<div class="stats">
+  <div class="stat"><div class="stat-top"><span class="lbl">Open</span><span class="led open"></span></div><div class="num" id="stOpen">0</div><div class="sub">Planned today</div></div>
+  <div class="stat over"><div class="stat-top"><span class="lbl">Overdue</span><span class="led over"></span></div><div class="num" id="stOver">0</div><div class="sub">Passed</div></div>
+  <div class="stat soon"><div class="stat-top"><span class="lbl">Due soon</span><span class="led soon"></span></div><div class="num" id="stSoon">0</div><div class="sub">Next 3 days</div></div>
+  <div class="stat done"><div class="stat-top"><span class="lbl">Completed</span><span class="led done"></span></div><div class="num" id="stRate">0%</div><div class="sub" id="stSub">0 of 0 done</div></div>
+</div>
+<form class="add" id="add" autocomplete="off"><input id="title" maxlength="200" placeholder="Call Sam tomorrow 2pm !high" aria-label="New action item" aria-describedby="preview"><button type="submit">+ Add</button></form>
+<div class="preview" id="preview" aria-live="polite"></div>
+<div class="nav"><button type="button" id="prev" aria-label="Previous day">‹ Prev</button><div><div class="date" id="date" aria-live="polite"></div><button type="button" class="today" id="goToday" hidden>Back to today</button></div><button type="button" id="next" aria-label="Next day">Next ›</button></div>
+<div class="toast" id="toast" role="status" hidden><span></span><button type="button">Undo</button></div>
 <section class="list" id="list"></section>
-<footer class="foot"><span id="count">QuickTick · synced with your dashboard</span><a href="dashboard.html" target="_blank">Full dashboard ↗</a></footer>
-</main><script src="newtab-checklist.js"></script></body></html>
+<footer class="foot"><span id="count">QuickTick · synced</span><a href="dashboard.html" target="_blank">Full dashboard ↗</a></footer>
+</main><script src="qt-shared.js"></script><script src="newtab-checklist.js"></script></body></html>

@@ -1,13 +1,15 @@
 {
   "manifest_version": 3,
-  "name": "QuickTick — Floating Checklist",
-  "version": "1.3.9",
-  "description": "A draggable floating checklist with clear action-item deadline stats. Made by Rohan Aditya.",
+  "name": "QuickTick — Action Checklist",
+  "version": "3.1.0",
+  "description": "Kinetic Neo-Brutalist & Cyber-Tactile floating checklist and command dashboard. Made by Rohan Aditya.",
   "permissions": [
     "activeTab",
     "scripting",
     "storage",
-    "tabs"
+    "tabs",
+    "alarms",
+    "notifications"
   ],
   "background": {
     "service_worker": "background.js"
